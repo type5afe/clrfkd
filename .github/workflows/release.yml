@@ -3,6 +3,12 @@ name: release
 on:
   push:
     tags: ['v*']
+  # Lets a failed release be retried without deleting and re-pushing the tag.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and publish, e.g. v0.1.0'
+        required: true
 
 permissions:
   contents: write
@@ -16,6 +22,7 @@ jobs:
           # Full history, so 'git describe --tags' resolves the tag that
           # triggered this run and the version gets baked into the binaries.
           fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-go@v5
         with:
@@ -26,13 +33,23 @@ jobs:
         run: make check
 
       - name: Build archives
-        run: make dist
+        run: |
+          go version
+          git describe --tags --always --dirty
+          make dist
 
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* \
-            --title "$GITHUB_REF_NAME" \
-            --generate-notes \
-            --verify-tag
+          ls -l dist
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG exists, uploading assets to it"
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* \
+              --title "$TAG" \
+              --generate-notes \
+              --verify-tag
+          fi
