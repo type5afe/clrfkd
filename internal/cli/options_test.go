@@ -230,3 +230,23 @@ func TestBannerContent(t *testing.T) {
 		t.Error("colour requested but not emitted")
 	}
 }
+
+// A bare invocation has to be distinguishable from a bad flag, so that the
+// caller can answer it with the banner and usage instead of a terse error.
+func TestBareInvocationIsReportedAsNoTarget(t *testing.T) {
+	_, err := Parse([]string{"--tier", "1"})
+	if !errors.Is(err, ErrNoTarget) {
+		t.Fatalf("err = %v, want ErrNoTarget", err)
+	}
+	// A genuine mistake must not be mistaken for it.
+	_, err = Parse([]string{"-u", "https://t.com", "--tier", "9"})
+	if errors.Is(err, ErrNoTarget) || err == nil {
+		t.Fatalf("a bad flag gave err = %v", err)
+	}
+}
+
+func TestColorStderrHonoursNoColorFlag(t *testing.T) {
+	if ColorStderr([]string{"--no-color"}) {
+		t.Error("--no-color ignored on the parse-failure path")
+	}
+}

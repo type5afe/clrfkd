@@ -237,7 +237,7 @@ func Parse(args []string) (*Options, error) {
 	case isPipe(os.Stdin):
 		o.Input = os.Stdin
 	default:
-		return nil, fmt.Errorf("no target: pass -u, -l, or pipe a list to stdin")
+		return nil, ErrNoTarget
 	}
 
 	o.HTTPHeader = http.Header{}
@@ -280,6 +280,22 @@ func Parse(args []string) (*Options, error) {
 
 // ErrHelp signals that usage was requested.
 var ErrHelp = errors.New("help requested")
+
+// ErrNoTarget signals that nothing was given to scan. A bare invocation is a
+// request to be told how to use the tool, not a mistake worth a terse error.
+var ErrNoTarget = errors.New("no target: pass -u, -l, or pipe a list to stdin")
+
+// ColorStderr reports whether stderr should carry ANSI colour. It takes the
+// raw arguments because it is needed on the path where parsing failed and
+// there are no parsed options to consult.
+func ColorStderr(args []string) bool {
+	for _, a := range args {
+		if a == "--no-color" || a == "-no-color" {
+			return false
+		}
+	}
+	return os.Getenv("NO_COLOR") == "" && isTerminal(os.Stderr)
+}
 
 // Usage returns the help text.
 func Usage() string { return usage }

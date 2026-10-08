@@ -29,13 +29,25 @@ func main() {
 	os.Exit(run())
 }
 
+// usage prints the banner and the help text, both to stderr.
+func usage(args []string) {
+	cli.Banner(os.Stderr, cli.ColorStderr(args))
+	fmt.Fprint(os.Stderr, cli.Usage())
+}
+
 func run() int {
-	opt, err := cli.Parse(os.Args[1:])
-	if errors.Is(err, cli.ErrHelp) {
-		fmt.Fprint(os.Stderr, cli.Usage())
+	args := os.Args[1:]
+	opt, err := cli.Parse(args)
+	switch {
+	case errors.Is(err, cli.ErrHelp):
+		usage(args)
 		return exitOK
-	}
-	if err != nil {
+	case errors.Is(err, cli.ErrNoTarget):
+		// Run with nothing to scan, so show what the tool is and how to drive
+		// it rather than a single line of complaint.
+		usage(args)
+		return exitError
+	case err != nil:
 		fmt.Fprintf(os.Stderr, "clrfkd: %v\n", err)
 		return exitError
 	}
