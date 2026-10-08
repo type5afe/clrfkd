@@ -1,5 +1,9 @@
 bin/
+dist/
 *.jsonl
 *.log
-clrfkd
-clrfkd-lab
+
+# Stray binaries from "go build" in the repo root.
+# Leading slash matters: an unanchored "clrfkd" would also match cmd/clrfkd/.
+/clrfkd
+/clrfkd-lab
