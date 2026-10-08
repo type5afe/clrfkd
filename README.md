@@ -28,6 +28,9 @@ $ clrfkd -u 'https://target.tld/redirect?next=/home'
 go install github.com/type5afe/clrfkd/cmd/clrfkd@latest
 ```
 
+Prebuilt binaries for linux, macOS and windows are on the
+[releases page](https://github.com/type5afe/clrfkd/releases/latest).
+
 From a clone: `make build` (to `./bin/clrfkd`), `make test`, `make install`.
 Go 1.24 or newer.
 

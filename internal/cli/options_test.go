@@ -189,3 +189,44 @@ func TestURLInputIsReadable(t *testing.T) {
 		t.Errorf("input = %q", string(b[:n]))
 	}
 }
+
+// The banner must stay out of stdout and out of machine-readable modes, or it
+// ends up in whatever the scan is piped into.
+func TestBannerIsSuppressedForMachineReaders(t *testing.T) {
+	for _, flag := range []string{"--json", "-s"} {
+		o, err := Parse([]string{"-u", "https://t.com", flag})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if o.Mode == output.Human {
+			t.Errorf("%s: mode is still Human, so the banner would print", flag)
+		}
+	}
+	o, err := Parse([]string{"-u", "https://t.com"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if o.Mode != output.Human {
+		t.Error("default mode should be Human so the banner prints")
+	}
+}
+
+func TestBannerContent(t *testing.T) {
+	var b strings.Builder
+	Banner(&b, false)
+	got := b.String()
+	if !strings.Contains(got, "CRLF injection scanner") {
+		t.Error("banner omits the tagline")
+	}
+	if !strings.Contains(got, Version) {
+		t.Errorf("banner omits the version %q", Version)
+	}
+	if strings.Contains(got, "\033[") {
+		t.Error("colour emitted when it was not requested")
+	}
+	var c strings.Builder
+	Banner(&c, true)
+	if !strings.Contains(c.String(), "\033[") {
+		t.Error("colour requested but not emitted")
+	}
+}

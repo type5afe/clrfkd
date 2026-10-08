@@ -63,6 +63,7 @@ type Options struct {
 	OutFile    io.WriteCloser
 	Mode       output.Mode
 	Color      bool
+	ColorErr   bool
 }
 
 const usage = `clrfkd - CRLF injection scanner
@@ -270,7 +271,9 @@ func Parse(args []string) (*Options, error) {
 	default:
 		o.Mode = output.Human
 	}
-	o.Color = !o.NoColor && os.Getenv("NO_COLOR") == "" && isTerminal(os.Stdout)
+	noColor := o.NoColor || os.Getenv("NO_COLOR") != ""
+	o.Color = !noColor && isTerminal(os.Stdout)
+	o.ColorErr = !noColor && isTerminal(os.Stderr)
 
 	return o, nil
 }
